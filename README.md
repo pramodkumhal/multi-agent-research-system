@@ -1,7 +1,5 @@
 # MindForge - Multi Agent Research System
 
-Impact: Automates an iterative research workflow to produce evidence-backed, polished reports faster.
-
 A Streamlit-based multi-agent research system that searches the web, scrapes the most relevant source, drafts a report, and then critiques it for quality.
 
 ## What it does
@@ -24,7 +22,7 @@ A Streamlit-based multi-agent research system that searches the web, scrapes the
 
 ## Requirements
 
-- Python 3.10 or newer
+- Python 3.14 or newer
 - A virtual environment is recommended
 - API keys for the external services you want to use
 
@@ -84,4 +82,3 @@ python pipeline.py
 - The search tool uses Tavily for web search.
 - The reader tool scrapes the selected URL using multiple extraction strategies.
 - The pipeline prints each stage to the console so you can follow the workflow.
-
