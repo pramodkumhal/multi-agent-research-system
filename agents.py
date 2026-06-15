@@ -56,15 +56,14 @@ def build_reader_agent():
     )
 
 # Writer Chain
-
 writer_prompt = ChatPromptTemplate.from_messages([
     ("system",
-     "You are a rigorous research writer. "
-     "Your job is to produce factual, evidence-based, and well-structured research reports. "
-     "Never invent facts. If evidence is weak or missing, explicitly mention uncertainty."),
+    "You are a rigorous research writer. "
+    "Your job is to produce factual, evidence-based, and well-structured research reports. "
+    "Never invent facts. If evidence is weak or missing, explicitly mention uncertainty."),
 
     ("human",
-     """Write a detailed research report on the topic below.
+    """Write a detailed research report on the topic below.
 
 Topic:
 {topic}
@@ -81,22 +80,22 @@ Instructions:
 Structure your report as:
 
 1. Introduction
-   - Brief context and definition of the topic
+- Brief context and definition of the topic
 
 2. Key Findings
-   - Minimum 3 well-explained points
-   - Each point must be supported by evidence from the research material
-   - If possible, mention source URLs in-line
+- Minimum 3 well-explained points
+- Each point must be supported by evidence from the research material
+- If possible, mention source URLs in-line
 
 3. Analysis
-   - Explain patterns, implications, or relationships between findings
+- Explain patterns, implications, or relationships between findings
 
 4. Conclusion
-   - Summarize the overall insight clearly and objectively
+- Summarize the overall insight clearly and objectively
 
 5. Sources
-   - List ONLY actual URLs found in the research material
-   - If no valid URLs exist, explicitly write: "No verifiable sources available"
+- List ONLY actual URLs found in the research material
+- If no valid URLs exist, explicitly write: "No verifiable sources available"
 
 Quality Rules:
 - Be precise, not verbose
@@ -107,7 +106,7 @@ Quality Rules:
 ])
 
 writer_chain = writer_prompt | llm | StrOutputParser()
-              
+
 
 # Critic Chain
 critic_prompt = ChatPromptTemplate.from_messages([
@@ -139,10 +138,10 @@ critic_chain = critic_prompt | llm | StrOutputParser()
 # Revision Chain
 revision_prompt = ChatPromptTemplate.from_messages([
     ("system",
-     "You are an expert research writer. Improve reports based on reviewer feedback."),
+    "You are an expert research writer. Improve reports based on reviewer feedback."),
 
     ("human",
-     """
+    """
 Original Report:
 {report}
 

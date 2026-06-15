@@ -15,17 +15,31 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap');
 
+:root {
+    --primary: #2457d6;
+    --primary-strong: #1d4ed8;
+    --accent-teal: #0f766e;
+    --accent-green: #2f855a;
+    --accent-orange: #d97706;
+    --bg: #f5f7fb;
+    --surface: #ffffff;
+    --surface-alt: #eef3f9;
+    --text: #1f2937;
+    --muted: #5f6b7a;
+    --border: #d8e0ea;
+}
+
 /* ── Reset & base ── */
 html, body, [class*="css"] {
     font-family: 'DM Sans', sans-serif;
-    color: #e8e4dc;
+    color: var(--text);
 }
 
 .stApp {
-    background: #0a0a0f;
+    background: var(--bg);
     background-image:
-        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(255,140,50,0.12) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 40% at 80% 110%, rgba(255,80,30,0.08) 0%, transparent 55%);
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(36,87,214,0.10) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 110%, rgba(15,118,110,0.08) 0%, transparent 55%);
 }
 
 /* ── Hide default streamlit chrome ── */
@@ -35,7 +49,11 @@ html, body, [class*="css"] {
 /* ── Hero header ── */
 .hero {
     text-align: center;
+    min-height: 52vh;
     padding: 3.5rem 0 2.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     position: relative;
 }
 .hero-eyebrow {
@@ -44,7 +62,7 @@ html, body, [class*="css"] {
     font-weight: 500;
     letter-spacing: 0.25em;
     text-transform: uppercase;
-    color: #ff8c32;
+    color: var(--primary);
     margin-bottom: 1rem;
     opacity: 0.9;
 }
@@ -54,16 +72,16 @@ html, body, [class*="css"] {
     font-weight: 800;
     line-height: 1.0;
     letter-spacing: -0.03em;
-    color: #f0ebe0;
-    margin: 0 0 1rem;
+    color: var(--text);
+    margin: 0 0 3rem;
 }
 .hero h1 span {
-    color: #ff8c32;
+    color: var(--primary);
 }
 .hero-sub {
     font-size: 1.05rem;
     font-weight: 300;
-    color: #a09890;
+    color: var(--muted);
     max-width: 520px;
     margin: 0 auto;
     line-height: 1.65;
@@ -81,9 +99,9 @@ html, body, [class*="css"] {
     font-size: 0.68rem;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: #a09890;
-    border: 1px solid rgba(255,255,255,0.08);
-    background: rgba(255,255,255,0.03);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.9);
     padding: 0.45rem 0.75rem;
     border-radius: 999px;
 }
@@ -91,48 +109,55 @@ html, body, [class*="css"] {
 /* ── Divider ── */
 .divider {
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255,140,50,0.3), transparent);
+    background: linear-gradient(90deg, transparent, rgba(36,87,214,0.28), transparent);
     margin: 2rem 0;
 }
 
 /* ── Input card ── */
 .input-card {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,140,50,0.15);
+    background: rgba(255,255,255,0.95);
+    border: 1px solid var(--border);
     border-radius: 16px;
     padding: 2rem 2.5rem;
     margin-bottom: 2rem;
+    margin-left: auto;
+    margin-right: auto;
     backdrop-filter: blur(8px);
+}
+
+.center-shell {
+    max-width: 840px;
+    margin: 0 auto;
 }
 
 /* ── Streamlit input overrides ── */
 .stTextInput > div > div > input {
-    background: rgba(255,255,255,0.05) !important;
-    border: 1px solid rgba(255,140,50,0.25) !important;
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
     border-radius: 10px !important;
-    color: #f0ebe0 !important;
+    color: var(--text) !important;
     font-family: 'DM Sans', sans-serif !important;
     font-size: 1rem !important;
     padding: 0.75rem 1rem !important;
     transition: border-color 0.2s, box-shadow 0.2s !important;
 }
 .stTextInput > div > div > input:focus {
-    border-color: #ff8c32 !important;
-    box-shadow: 0 0 0 3px rgba(255,140,50,0.12) !important;
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 3px rgba(36,87,214,0.12) !important;
 }
 .stTextInput > label {
     font-family: 'DM Mono', monospace !important;
     font-size: 0.72rem !important;
     letter-spacing: 0.15em !important;
     text-transform: uppercase !important;
-    color: #ff8c32 !important;
+    color: var(--primary) !important;
     font-weight: 500 !important;
 }
 
 /* ── Button ── */
 .stButton > button {
-    background: linear-gradient(135deg, #ff8c32 0%, #ff5a1a 100%) !important;
-    color: #0a0a0f !important;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent-teal) 100%) !important;
+    color: #ffffff !important;
     font-family: 'Syne', sans-serif !important;
     font-weight: 700 !important;
     font-size: 0.95rem !important;
@@ -142,12 +167,12 @@ html, body, [class*="css"] {
     padding: 0.7rem 2.2rem !important;
     cursor: pointer !important;
     transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s !important;
-    box-shadow: 0 4px 20px rgba(255,140,50,0.3) !important;
+    box-shadow: 0 4px 20px rgba(36,87,214,0.22) !important;
     width: 100%;
 }
 .stButton > button:hover {
     transform: translateY(-2px) !important;
-    box-shadow: 0 8px 28px rgba(255,140,50,0.4) !important;
+    box-shadow: 0 8px 28px rgba(36,87,214,0.28) !important;
     opacity: 0.95 !important;
 }
 .stButton > button:active {
@@ -156,22 +181,22 @@ html, body, [class*="css"] {
 
 /* ── Pipeline step cards ── */
 .step-card {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.07);
+    background: rgba(255,255,255,0.95);
+    border: 1px solid var(--border);
     border-radius: 14px;
-    padding: 1.5rem 1.8rem;
-    margin-bottom: 1.2rem;
+    padding: 0.6rem 0.6rem;
+    margin-bottom: 1rem;
     position: relative;
     overflow: hidden;
     transition: border-color 0.3s;
 }
 .step-card.active {
-    border-color: rgba(255,140,50,0.4);
-    background: rgba(255,140,50,0.04);
+    border-color: rgba(36,87,214,0.35);
+    background: rgba(36,87,214,0.05);
 }
 .step-card.done {
-    border-color: rgba(80,200,120,0.3);
-    background: rgba(80,200,120,0.03);
+    border-color: rgba(47,133,90,0.28);
+    background: rgba(47,133,90,0.05);
 }
 .step-card::before {
     content: '';
@@ -179,11 +204,11 @@ html, body, [class*="css"] {
     left: 0; top: 0; bottom: 0;
     width: 3px;
     border-radius: 14px 0 0 14px;
-    background: rgba(255,255,255,0.05);
+    background: var(--border);
     transition: background 0.3s;
 }
-.step-card.active::before { background: #ff8c32; }
-.step-card.done::before   { background: #50c878; }
+.step-card.active::before { background: var(--primary); }
+.step-card.done::before   { background: var(--accent-green); }
 
 .step-header {
     display: flex;
@@ -196,14 +221,14 @@ html, body, [class*="css"] {
     font-size: 0.68rem;
     font-weight: 500;
     letter-spacing: 0.15em;
-    color: #ff8c32;
+    color: var(--primary);
     opacity: 0.7;
 }
 .step-title {
     font-family: 'Syne', sans-serif;
     font-size: 0.95rem;
     font-weight: 700;
-    color: #f0ebe0;
+    color: var(--text);
 }
 .step-status {
     margin-left: auto;
@@ -211,18 +236,32 @@ html, body, [class*="css"] {
     font-size: 0.68rem;
     letter-spacing: 0.1em;
 }
-.status-waiting  { color: #555; }
-.status-running  { color: #ff8c32; }
-.status-done     { color: #50c878; }
+.status-waiting  { color: var(--muted); }
+.status-running  { color: var(--accent-orange); }
+.status-done     { color: var(--accent-green); }
 
 /* ── Result panels ── */
 .result-panel {
-    background: rgba(255,255,255,0.025);
-    border: 1px solid rgba(255,255,255,0.07);
+    background: rgba(255,255,255,0.96);
+    border: 1px solid var(--border);
     border-radius: 14px;
     padding: 1.8rem 2rem;
     margin-top: 1rem;
     margin-bottom: 1.5rem;
+    color: var(--text);
+}
+.result-panel h1,
+.result-panel h2,
+.result-panel h3,
+.result-panel h4,
+.result-panel h5,
+.result-panel h6,
+.result-panel p,
+.result-panel li,
+.result-panel a,
+.result-panel strong,
+.result-panel em {
+    color: var(--text) !important;
 }
 .result-panel-title {
     font-family: 'DM Mono', monospace;
@@ -230,33 +269,61 @@ html, body, [class*="css"] {
     font-weight: 500;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: #ff8c32;
+    color: var(--primary);
     margin-bottom: 1rem;
     padding-bottom: 0.7rem;
-    border-bottom: 1px solid rgba(255,140,50,0.15);
+    border-bottom: 1px solid rgba(36,87,214,0.15);
 }
 .result-content {
     font-size: 0.92rem;
     line-height: 1.8;
-    color: #cdc8bf;
+    color: var(--text);
     white-space: pre-wrap;
     font-family: 'DM Sans', sans-serif;
 }
 
 /* ── Report & feedback panels ── */
 .report-panel {
-    background: rgba(255,255,255,0.025);
-    border: 1px solid rgba(255,140,50,0.2);
+    background: rgba(255,255,255,0.98);
+    border: 1px solid rgba(36,87,214,0.18);
     border-radius: 16px;
     padding: 2rem 2.5rem;
     margin-top: 1rem;
+    color: var(--text);
+}
+.report-panel h1,
+.report-panel h2,
+.report-panel h3,
+.report-panel h4,
+.report-panel h5,
+.report-panel h6,
+.report-panel p,
+.report-panel li,
+.report-panel a,
+.report-panel strong,
+.report-panel em {
+    color: var(--text) !important;
 }
 .feedback-panel {
-    background: rgba(255,255,255,0.025);
-    border: 1px solid rgba(80,200,120,0.2);
+    background: rgba(255,255,255,0.98);
+    border: 1px solid rgba(15,118,110,0.18);
     border-radius: 16px;
     padding: 2rem 2.5rem;
     margin-top: 1rem;
+    color: var(--text);
+}
+.feedback-panel h1,
+.feedback-panel h2,
+.feedback-panel h3,
+.feedback-panel h4,
+.feedback-panel h5,
+.feedback-panel h6,
+.feedback-panel p,
+.feedback-panel li,
+.feedback-panel a,
+.feedback-panel strong,
+.feedback-panel em {
+    color: var(--text) !important;
 }
 .panel-label {
     font-family: 'DM Mono', monospace;
@@ -267,22 +334,22 @@ html, body, [class*="css"] {
     padding-bottom: 0.7rem;
 }
 .panel-label.orange {
-    color: #ff8c32;
-    border-bottom: 1px solid rgba(255,140,50,0.15);
+    color: var(--primary);
+    border-bottom: 1px solid rgba(36,87,214,0.15);
 }
 .panel-label.green {
-    color: #50c878;
-    border-bottom: 1px solid rgba(80,200,120,0.15);
+    color: var(--accent-green);
+    border-bottom: 1px solid rgba(47,133,90,0.15);
 }
 
 /* ── Progress text ── */
-.stSpinner > div { color: #ff8c32 !important; }
+.stSpinner > div { color: var(--primary) !important; }
 
 /* ── Expander ── */
 details summary {
     font-family: 'DM Mono', monospace !important;
     font-size: 0.75rem !important;
-    color: #a09890 !important;
+    color: var(--muted) !important;
     letter-spacing: 0.1em !important;
     cursor: pointer;
 }
@@ -292,7 +359,7 @@ details summary {
     font-family: 'Syne', sans-serif;
     font-size: 1.3rem;
     font-weight: 700;
-    color: #f0ebe0;
+    color: var(--text);
     margin: 2rem 0 1rem;
 }
 
@@ -300,10 +367,15 @@ details summary {
 .notice {
     font-family: 'DM Mono', monospace;
     font-size: 0.72rem;
-    color: #605850;
+    color: var(--muted);
     text-align: center;
     margin-top: 3rem;
     letter-spacing: 0.08em;
+}
+
+/* ── Markdown headings ── */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text) !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -339,10 +411,10 @@ for key in ("results", "running", "done"):
 # Hero section
 st.markdown("""
 <div class="hero">
-    <div class="hero-eyebrow">Multi-Agent AI System</div>
+    <div class="hero-eyebrow">Multi Agent Research System</div>
     <h1>Mind<span>Forge</span></h1>
     <p class="hero-sub">
-        Specialized AI agents collaborate to search, scrape, write, critique,
+        Specialized Multi agents collaborate to search, scrape, write, critique,
         and revise a polished research report on any topic.
     </p>
     <div class="hero-metrics">
@@ -357,45 +429,45 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# Layout: input (left) and pipeline (right)
-col_input, col_spacer, col_pipeline = st.columns([5, 0.5, 4])
 
-with col_input:
-    st.markdown('<div class="input-card">', unsafe_allow_html=True)
-    topic = st.text_input(
-        "Research Topic",
-        placeholder="e.g. Quantum computing breakthroughs in 2025",
-        key="topic_input",
-        label_visibility="visible",
-    )
-    run_btn = st.button("⚡  Run Research Pipeline", use_container_width=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+# Layout: centered input and pipeline
+st.markdown('<div class="center-shell">', unsafe_allow_html=True)
+st.markdown('<div class="input-card">', unsafe_allow_html=True)
+topic = st.text_input(
+    "Research Topic",
+    placeholder="Artificial General Intelligence in 2026",
+    key="topic_input",
+    label_visibility="visible",
+)
+run_btn = st.button("⚡  Run Research Pipeline", use_container_width=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
-with col_pipeline:
-    st.markdown('<div class="section-heading">Pipeline</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-heading">Pipeline</div>', unsafe_allow_html=True)
 
-    r = st.session_state.results
+r = st.session_state.results
 
-    def s(step):
-        if not r:
-            return "waiting"
-        steps = ["search", "reader", "writer", "critic", "revision"]
-        if step in r:
-            return "done"
-        # treat pipeline's `final_report` as equivalent to `revision`
-        if step == "revision" and "final_report" in r:
-            return "done"
-        if st.session_state.running:
-            for k in steps:
-                if k not in r:
-                    return "running" if k == step else "waiting"
+def s(step):
+    if not r:
         return "waiting"
+    steps = ["search", "reader", "writer", "critic", "revision"]
+    if step in r:
+        return "done"
+    # treat pipeline's `final_report` as equivalent to `revision`
+    if step == "revision" and "final_report" in r:
+        return "done"
+    if st.session_state.running:
+        for k in steps:
+            if k not in r:
+                return "running" if k == step else "waiting"
+    return "waiting"
 
-    step_card("01", "Search Agent",  s("search"), "Gathers recent web information")
-    step_card("02", "Reader Agent",  s("reader"), "Scrapes & extracts deep content")
-    step_card("03", "Writer Chain",  s("writer"), "Drafts the full research report")
-    step_card("04", "Critic Chain",  s("critic"), "Reviews & scores the report")
-    step_card("05", "Revision Chain",  s("revision"), "Refines the report using critique")
+step_card("01", "Search Agent",  s("search"), "Gathers recent web information")
+step_card("02", "Reader Agent",  s("reader"), "Scrapes & extracts deep content")
+step_card("03", "Writer Chain",  s("writer"), "Drafts the full research report")
+step_card("04", "Critic Chain",  s("critic"), "Reviews & scores the report")
+step_card("05", "Revision Chain",  s("revision"), "Refines the report using critique")
+
+st.markdown('</div>', unsafe_allow_html=True)
 
 
 # Run pipeline
@@ -507,10 +579,10 @@ if r:
         st.markdown("</div>", unsafe_allow_html=True)
 
         st.download_button(
-            label="⬇  Download Report (.md)",
+            label="⬇  Download Report (.pdf)",
             data=final_content,
-            file_name=f"research_report_{int(time.time())}.md",
-            mime="text/markdown",
+            file_name=f"research_report_{int(time.time())}.pdf",
+            mime="application/pdf",
         )
 
 

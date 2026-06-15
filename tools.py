@@ -58,7 +58,7 @@ def scrape_url(url: str) -> str:
 
         html = response.text
 
-       
+    
         # Strategy 1 → trafilatura (BEST for articles/blogs)
         extracted = trafilatura.extract(
             html,

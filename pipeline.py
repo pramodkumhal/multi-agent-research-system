@@ -54,9 +54,9 @@ def run_research_pipeline(topic: str) -> dict:
     reader_result = reader_agent.invoke({
         "messages": [
             ("user",
-             f"You MUST use the scrape_url tool for each of the following URLs:\n\n"
-             f"{chr(10).join(urls)}\n\n"
-             f"Extract and combine the most important insights into a structured summary.")
+            f"You MUST use the scrape_url tool for each of the following URLs:\n\n"
+            f"{chr(10).join(urls)}\n\n"
+            f"Extract and combine the most important insights into a structured summary.")
         ]
     })
 
