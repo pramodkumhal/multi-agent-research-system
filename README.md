@@ -1,6 +1,6 @@
 # MindForge - Multi Agent Research System
 
-A Streamlit-based multi-agent research system that searches the web, scrapes the most relevant source, drafts a report, and then critiques it for quality.
+A Streamlit-based multi-agent research system that searches the web, scrapes the most relevant source, drafts a report, critiques it for quality, and refines it based on feedback.
 
 ## What it does
 
@@ -13,18 +13,19 @@ A Streamlit-based multi-agent research system that searches the web, scrapes the
 
 ## Project files
 
-- `app.py` - Streamlit UI
-- `pipeline.py` - CLI pipeline runner
-- `agents.py` - LLM setup, agents, writer, and critic chains
-- `tools.py` - Search and scraping tools
+- `app.py` - Streamlit UI with live pipeline visualization
+- `pipeline.py` - CLI pipeline runner for batch processing
+- `agents.py` - LLM setup (Gemini with Groq fallbacks), search agent, writer/critic/revision chains
+- `tools.py` - Web search (Tavily) and content scraping utilities
 - `requirements.txt` - Python dependencies
 - `.gitignore` - Git ignore rules
+- `LICENSE` - Project license
 
 ## Requirements
 
-- Python 3.14 or newer
+- Python 3.11 or newer
 - A virtual environment is recommended
-- API keys for the external services you want to use
+- API keys for Gemini, Groq, and Tavily (see Environment variables below)
 
 ## Environment variables
 
@@ -36,7 +37,7 @@ GOOGLE_API_KEY=your_google_api_key
 GROQ_API_KEY=your_groq_api_key
 ```
 
-The app uses Gemini and Groq model fallbacks, so having both `GOOGLE_API_KEY` and `GROQ_API_KEY` available is recommended.
+The app uses **Google Gemini as the primary model** with Groq fallbacks (Llama 3.3, DeepSeek-R1, and Llama 3.1). Having all three API keys available ensures seamless fallback execution if one service is unavailable.
 
 ## Setup
 
@@ -79,6 +80,8 @@ python pipeline.py
 
 ## Notes
 
-- The search tool uses Tavily for web search.
-- The reader tool scrapes the selected URL using multiple extraction strategies.
-- The pipeline prints each stage to the console so you can follow the workflow.
+- **Web Search:** Uses Tavily API for reliable, up-to-date search results.
+- **Content Extraction:** The scraper employs multiple strategies (BeautifulSoup, Readability, Trafilatura) to extract clean, readable content from web pages.
+- **Multi-Agent Workflow:** Features a feedback loop where the Critic evaluates the Writer's draft, and the Revision agent applies the feedback to produce a polished final report.
+- **Model Fallbacks:** If the primary Gemini model is unavailable, the system automatically falls back to Groq models with progressive downgrades based on availability.
+- **Console & Web UI:** Pipeline execution prints detailed stages to console (CLI) and displays real-time progress in the Streamlit web interface (UI).
