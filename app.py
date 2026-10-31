@@ -1,5 +1,6 @@
 import streamlit as st
 import time
+import html
 from agents import build_reader_agent, build_search_agent, writer_chain, critic_chain, revision_chain
 
 # Page configuration
@@ -79,7 +80,6 @@ html, body, [class*="css"] {
     color: var(--primary);
 }
 .hero-sub {
-    font-size: 1.05rem;
     font-weight: 300;
     color: var(--muted);
     max-width: 520px;
@@ -239,6 +239,12 @@ html, body, [class*="css"] {
 .status-waiting  { color: var(--muted); }
 .status-running  { color: var(--accent-orange); }
 .status-done     { color: var(--accent-green); }
+.status-error    { color: #dc2626; }
+.step-card.error::before { background: #dc2626; }
+.status-error    { color: #dc2626; }
+.step-card.error::before { background: #dc2626; }
+.status-error    { color: #dc2626; }
+.step-card.error::before { background: #dc2626; }
 
 /* ── Result panels ── */
 .result-panel {
@@ -289,7 +295,11 @@ html, body, [class*="css"] {
     border-radius: 16px;
     padding: 2rem 2.5rem;
     margin-top: 1rem;
-    color: var(--text);
+    color: #1f2937 !important;
+}
+.report-panel,
+.report-panel * {
+    color: #1f2937 !important;
 }
 .report-panel h1,
 .report-panel h2,
@@ -301,8 +311,13 @@ html, body, [class*="css"] {
 .report-panel li,
 .report-panel a,
 .report-panel strong,
-.report-panel em {
-    color: var(--text) !important;
+.report-panel em,
+.report-panel span,
+.report-panel div,
+.report-panel text,
+.report-panel b,
+.report-panel i {
+    color: #1f2937 !important;
 }
 .feedback-panel {
     background: rgba(255,255,255,0.98);
@@ -310,7 +325,11 @@ html, body, [class*="css"] {
     border-radius: 16px;
     padding: 2rem 2.5rem;
     margin-top: 1rem;
-    color: var(--text);
+    color: #1f2937 !important;
+}
+.feedback-panel,
+.feedback-panel * {
+    color: #1f2937 !important;
 }
 .feedback-panel h1,
 .feedback-panel h2,
@@ -322,8 +341,13 @@ html, body, [class*="css"] {
 .feedback-panel li,
 .feedback-panel a,
 .feedback-panel strong,
-.feedback-panel em {
-    color: var(--text) !important;
+.feedback-panel em,
+.feedback-panel span,
+.feedback-panel div,
+.feedback-panel text,
+.feedback-panel b,
+.feedback-panel i {
+    color: #1f2937 !important;
 }
 .panel-label {
     font-family: 'DM Mono', monospace;
@@ -377,6 +401,21 @@ details summary {
 h1, h2, h3, h4, h5, h6 {
     color: var(--text) !important;
 }
+
+/* st.write output is rendered in sibling nodes; key-based containers ensure
+   the report content is actually nested under a stylable wrapper. */
+.st-key-draft_panel,
+.st-key-final_panel {
+    background: rgba(255,255,255,0.98) !important;
+    border: 1px solid rgba(36,87,214,0.18) !important;
+    border-radius: 16px !important;
+    padding: 1.6rem 2rem !important;
+    margin-top: 1rem !important;
+}
+.st-key-draft_panel *,
+.st-key-final_panel * {
+    color: #000000 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -387,9 +426,10 @@ def step_card(num: str, title: str, state: str, desc: str = ""):
         "waiting": ("WAITING", "status-waiting"),
         "running": ("● RUNNING", "status-running"),
         "done":    ("✓ DONE",   "status-done"),
+        "error":   ("✗ ERROR",  "status-error"),
     }
     label, cls = status_map.get(state, ("", ""))
-    card_cls = {"running": "active", "done": "done"}.get(state, "")
+    card_cls = {"running": "active", "done": "done", "error": "error"}.get(state, "")
     st.markdown(f"""
     <div class="step-card {card_cls}">
         <div class="step-header">
@@ -402,10 +442,36 @@ def step_card(num: str, title: str, state: str, desc: str = ""):
     """, unsafe_allow_html=True)
 
 
+def to_text(value) -> str:
+    """Normalize agent/chain output into a plain string."""
+    if isinstance(value, str):
+        return value
+    if value is None:
+        return ""
+    if isinstance(value, list):
+        parts = []
+        for item in value:
+            if isinstance(item, str):
+                parts.append(item)
+            elif isinstance(item, dict):
+                parts.append(str(item.get("text") or item.get("content") or item))
+            else:
+                parts.append(str(item))
+        return "\n".join(p for p in parts if p)
+    return str(value)
+
+
 # Session state initialization
-for key in ("results", "running", "done"):
+for key in ("results", "running", "done", "current_step", "start_time", "error_step", "saved_topic"):
     if key not in st.session_state:
-        st.session_state[key] = {} if key == "results" else False
+        if key == "results":
+            st.session_state[key] = {}
+        elif key in ("current_step", "saved_topic"):
+            st.session_state[key] = ""
+        elif key == "error_step":
+            st.session_state[key] = None
+        else:
+            st.session_state[key] = False
 
 
 # Hero section
@@ -433,39 +499,81 @@ st.markdown("""
 # Layout: centered input and pipeline
 st.markdown('<div class="center-shell">', unsafe_allow_html=True)
 st.markdown('<div class="input-card">', unsafe_allow_html=True)
-topic = st.text_input(
-    "Research Topic",
-    placeholder="Artificial General Intelligence in 2026",
-    key="topic_input",
-    label_visibility="visible",
-)
-run_btn = st.button("⚡  Run Research Pipeline", use_container_width=True)
+
+def reset_state():
+    """Callback to reset all session state — runs before widgets are instantiated."""
+    st.session_state.results = {}
+    st.session_state.running = False
+    st.session_state.done = False
+    st.session_state.current_step = ""
+    st.session_state.error_step = None
+    st.session_state.saved_topic = ""
+    st.session_state.start_time = False
+    st.session_state.topic_input = ""
+
+col1, col2 = st.columns([3.6, 1])
+with col1:
+    topic = st.text_input(
+        "Research Topic",
+        placeholder="Artificial General Intelligence in 2026",
+        key="topic_input",
+        label_visibility="visible",
+        disabled=st.session_state.running,
+    )
+with col2:
+    col_run, col_reset = st.columns(2)
+    with col_run:
+        run_btn = st.button("⚡  Run", use_container_width=True, disabled=st.session_state.running or not topic.strip())
+    with col_reset:
+        st.button("↻ Reset", use_container_width=True, on_click=reset_state)
+
+
 st.markdown('</div>', unsafe_allow_html=True)
+
 
 st.markdown('<div class="section-heading">Pipeline</div>', unsafe_allow_html=True)
 
-r = st.session_state.results
+# Create a placeholder for pipeline cards to update dynamically
+pipeline_placeholder = st.empty()
 
-def s(step):
-    if not r:
+def render_pipeline():
+    """Render the pipeline cards based on current state"""
+    r = st.session_state.results
+    elapsed = ""
+    if st.session_state.running and st.session_state.start_time:
+        elapsed_secs = int(time.time() - st.session_state.start_time)
+        elapsed = f" ({elapsed_secs}s)"
+    
+    def s(step):
+        if not r:
+            return "waiting"
+        steps = ["search", "reader", "writer", "critic", "revision"]
+        if step in r:
+            return "done"
+        # treat pipeline's `final_report` as equivalent to `revision`
+        if step == "revision" and "final_report" in r:
+            return "done"
+        # Check if step has error
+        if st.session_state.error_step == step:
+            return "error"
+        # Check if this step is currently running
+        if st.session_state.current_step == step:
+            return "running"
+        # Check if any step hasn't been done yet
+        if st.session_state.running:
+            for k in steps:
+                if k not in r:
+                    return "waiting" if steps.index(step) >= steps.index(k) else "done"
         return "waiting"
-    steps = ["search", "reader", "writer", "critic", "revision"]
-    if step in r:
-        return "done"
-    # treat pipeline's `final_report` as equivalent to `revision`
-    if step == "revision" and "final_report" in r:
-        return "done"
-    if st.session_state.running:
-        for k in steps:
-            if k not in r:
-                return "running" if k == step else "waiting"
-    return "waiting"
+    
+    with pipeline_placeholder.container():
+        step_card("01", "Search Agent",  s("search"), "Gathers recent web information")
+        step_card("02", "Reader Agent",  s("reader"), "Scrapes & extracts deep content")
+        step_card("03", "Writer Chain",  s("writer"), "Drafts the full research report")
+        step_card("04", "Critic Chain",  s("critic"), "Reviews & scores the report")
+        step_card("05", "Revision Chain",  s("revision"), "Refines the report using critique" + elapsed)
 
-step_card("01", "Search Agent",  s("search"), "Gathers recent web information")
-step_card("02", "Reader Agent",  s("reader"), "Scrapes & extracts deep content")
-step_card("03", "Writer Chain",  s("writer"), "Drafts the full research report")
-step_card("04", "Critic Chain",  s("critic"), "Reviews & scores the report")
-step_card("05", "Revision Chain",  s("revision"), "Refines the report using critique")
+render_pipeline()
 
 st.markdown('</div>', unsafe_allow_html=True)
 
@@ -478,65 +586,103 @@ if run_btn:
         st.session_state.results = {}
         st.session_state.running = True
         st.session_state.done = False
+        st.session_state.start_time = time.time()
+        st.session_state.saved_topic = topic  # Save topic before loop
+        st.session_state.error_step = None
         st.rerun()
 
 if st.session_state.running and not st.session_state.done:
-    results = {}
-    topic_val = st.session_state.topic_input
-
-    # Step 1: Search
-    with st.spinner("🔍  Search Agent is working…"):
-        search_agent = build_search_agent()
-        sr = search_agent.invoke({
-            "messages": [("user", f"Find recent, reliable and detailed information about: {topic_val}")]
-        })
-        results["search"] = sr["messages"][-1].content
-        st.session_state.results = dict(results)
+    results = dict(st.session_state.results)
+    topic_val = st.session_state.saved_topic  # Use saved topic, not current input
+    steps_order = ["search", "reader", "writer", "critic", "revision"]
     
-
-    # Step 2: Reader
-    with st.spinner("📄  Reader Agent is scraping top resources…"):
-        reader_agent = build_reader_agent()
-        rr = reader_agent.invoke({
-            "messages": [("user",
-                f"Based on the following search results about '{topic_val}', "
-                f"pick the most relevant URL and scrape it for deeper content.\n\n"
-                f"Search Results:\n{results['search'][:800]}"
-            )]
-        })
-        results["reader"] = rr["messages"][-1].content
-        st.session_state.results = dict(results)
-
-    # Step 3: Writer
-    with st.spinner("✍️  Writer is drafting the report…"):
-        research_combined = (
-            f"SEARCH RESULTS:\n{results['search']}\n\n"
-            f"DETAILED SCRAPED CONTENT:\n{results['reader']}"
-        )
-        results["writer"] = writer_chain.invoke({
-            "topic": topic_val,
-            "research": research_combined
-        })
-        st.session_state.results = dict(results)
-
-    # Step 4: Critic
-    with st.spinner("🧐  Critic is reviewing the report…"):
-        results["critic"] = critic_chain.invoke({
-            "report": results["writer"]
-        })
-        st.session_state.results = dict(results)
-
-    # Step 5: Revision
-    with st.spinner("🛠️  Revision Chain is polishing the report…"):
-        results["revision"] = revision_chain.invoke({
-            "report": results["writer"],
-            "feedback": results["critic"]
-        })
-        st.session_state.results = dict(results)
-
-    st.session_state.running = False
-    st.session_state.done = True
-    st.rerun()
+    # Find which step to execute next
+    next_step = None
+    for step in steps_order:
+        if step not in results:
+            next_step = step
+            break
+    
+    if next_step:
+        # Update pipeline display before executing
+        st.session_state.current_step = next_step
+        render_pipeline()  # Update UI before execution
+        
+        try:
+            # Step 1: Search
+            if next_step == "search":
+                with st.spinner("🔍  Search Agent is working…"):
+                    search_agent = build_search_agent()
+                    sr = search_agent.invoke({
+                        "messages": [("user", f"Find recent, reliable and detailed information about: {topic_val}")]
+                    })
+                    results["search"] = to_text(sr["messages"][-1].content)
+                    st.session_state.results = dict(results)
+                    st.session_state.current_step = ""
+                    st.rerun()
+            
+            # Step 2: Reader
+            elif next_step == "reader":
+                with st.spinner("📄  Reader Agent is scraping top resources…"):
+                    reader_agent = build_reader_agent()
+                    rr = reader_agent.invoke({
+                        "messages": [("user",
+                            f"Based on the following search results about '{topic_val}', "
+                            f"pick the most relevant URL and scrape it for deeper content.\n\n"
+                            f"Search Results:\n{results['search'][:800]}"
+                        )]
+                    })
+                    results["reader"] = to_text(rr["messages"][-1].content)
+                    st.session_state.results = dict(results)
+                    st.session_state.current_step = ""
+                    st.rerun()
+            
+            # Step 3: Writer
+            elif next_step == "writer":
+                with st.spinner("✍️  Writer is drafting the report…"):
+                    research_combined = (
+                        f"SEARCH RESULTS:\n{results['search']}\n\n"
+                        f"DETAILED SCRAPED CONTENT:\n{results['reader']}"
+                    )
+                    results["writer"] = to_text(writer_chain.invoke({
+                        "topic": topic_val,
+                        "research": research_combined
+                    }))
+                    st.session_state.results = dict(results)
+                    st.session_state.current_step = ""
+                    st.rerun()
+            
+            # Step 4: Critic
+            elif next_step == "critic":
+                with st.spinner("🧐  Critic is reviewing the report…"):
+                    results["critic"] = to_text(critic_chain.invoke({
+                        "report": results["writer"]
+                    }))
+                    st.session_state.results = dict(results)
+                    st.session_state.current_step = ""
+                    st.rerun()
+            
+            # Step 5: Revision
+            elif next_step == "revision":
+                with st.spinner("🛠️  Revision Chain is polishing the report…"):
+                    results["revision"] = to_text(revision_chain.invoke({
+                        "report": results["writer"],
+                        "feedback": results["critic"]
+                    }))
+                    st.session_state.results = dict(results)
+                    st.session_state.current_step = ""
+                    st.rerun()
+        except Exception as e:
+            st.session_state.error_step = next_step
+            st.session_state.current_step = ""
+            render_pipeline()
+            st.error(f"❌ Error in {next_step} step: {str(e)}")
+            st.session_state.running = False
+    else:
+        # All steps completed
+        st.session_state.running = False
+        st.session_state.done = True
+        st.rerun()
 
 
 # Results display
@@ -550,40 +696,27 @@ if r:
     if "search" in r:
         with st.expander("🔍 Search Results (raw)", expanded=False):
             st.markdown(f'<div class="result-panel"><div class="result-panel-title">Search Agent Output</div>'
-                        f'<div class="result-content">{r["search"]}</div></div>', unsafe_allow_html=True)
+                        f'<div class="result-content">{html.escape(to_text(r["search"]))}</div></div>', unsafe_allow_html=True)
 
     if "reader" in r:
         with st.expander("📄 Scraped Content (raw)", expanded=False):
             st.markdown(f'<div class="result-panel"><div class="result-panel-title">Reader Agent Output</div>'
-                        f'<div class="result-content">{r["reader"]}</div></div>', unsafe_allow_html=True)
+                        f'<div class="result-content">{html.escape(to_text(r["reader"]))}</div></div>', unsafe_allow_html=True)
 
     # Draft report (only show if no revision yet)
     if "writer" in r and ("revision" not in r and "final_report" not in r):
-        st.markdown("""
-        <div class="report-panel">
-            <div class="panel-label orange">📝 Draft Research Report</div>
-        """, unsafe_allow_html=True)
-        st.markdown(r["writer"])   # render markdown natively
-        st.markdown("</div>", unsafe_allow_html=True)
+        with st.container(key="draft_panel"):
+            st.markdown('<div class="panel-label orange">📝 Draft Research Report</div>', unsafe_allow_html=True)
+            st.write(to_text(r["writer"]))
 
     # Critic feedback hidden in UI (used for revision)
 
     # Show final report from either `revision` (app run) or `final_report` (pipeline CLI)
     if "revision" in r or "final_report" in r:
-        final_content = r.get("revision") or r.get("final_report")
-        st.markdown("""
-        <div class="report-panel">
-            <div class="panel-label orange">Final Report</div>
-        """, unsafe_allow_html=True)
-        st.markdown(final_content)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        st.download_button(
-            label="⬇  Download Report (.pdf)",
-            data=final_content,
-            file_name=f"research_report_{int(time.time())}.pdf",
-            mime="application/pdf",
-        )
+        final_content = to_text(r.get("revision") or r.get("final_report"))
+        with st.container(key="final_panel"):
+            st.markdown('<div class="panel-label orange">Final Report</div>', unsafe_allow_html=True)
+            st.write(final_content)
 
 
 # Footer
